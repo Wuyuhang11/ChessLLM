@@ -1,4 +1,4 @@
-from app import INIT_BOARD
+from config import INIT_BOARD
 
 
 # 初始化棋盘

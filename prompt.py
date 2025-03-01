@@ -1,4 +1,4 @@
-from app import PIECE_MAP
+from config import PIECE_MAP
 
 def get_player_prompt(side: str, board: list) -> str:
     """生成玩家提示词"""
@@ -7,9 +7,10 @@ def get_player_prompt(side: str, board: list) -> str:
     你正在参与中国象棋对战，当前为{role}。棋盘状态如下：
     {format_board(board)}
 
-    棋子代码规则（第一个字母表示阵营，第二个字母表示兵种）：
+    棋子代码规则（第一个字母表示阵营，第二个字母表示兵种，第三个代表第几个）：
     R-红方，B-黑方
     K-将/帅，S-士，X-象，M-马，C-车，P-炮，B-兵/卒
+    RS1-红士1, BS1-黑士1，RB-红兵2，RK-红将，BK-黑将
 
     移动规则：
     1. 将/帅：只能在九宫格内移动，每次一步
@@ -19,6 +20,11 @@ def get_player_prompt(side: str, board: list) -> str:
     5. 车：直线任意距离
     6. 炮：移动时需隔一子才能吃子
     7. 兵：过河前只能前进，过河后可左右移动
+    
+    吃子规则：
+    1. 当你的棋子移动到对方棋子的位置时，会吃掉对方的棋子。
+    2. 吃子时，目标位置必须是对方的棋子。
+    3. 吃子后，目标位置的棋子会被替换为你的棋子，原位置变为空。
     
     请严格按照以下格式返回移动指令：[棋子代码,[目标行,目标列]]
     示例：["{'R' if side == 'R' else 'B'}C", [4, 5]]
