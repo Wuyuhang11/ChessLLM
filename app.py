@@ -15,6 +15,7 @@ def main():
         # 生成提示词
         prompt = get_player_prompt(side, game.board)
         move = None
+        print(prompt)
         
         # 获取合法移动
         while True:
