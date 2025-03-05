@@ -1,4 +1,6 @@
 from config import PIECE_MAP
+from game_engine import GameEngine
+
 
 def format_board(board: list) -> str:
     """格式化棋盘为更直观的二维表格形式，包含行列编号和棋子中文名称"""
@@ -12,6 +14,7 @@ def format_board(board: list) -> str:
         formatted.append(row_str.strip())
     return "\n".join(formatted)
 
+
 def get_current_positions(side: str, board: list) -> str:
     """返回当前玩家的所有棋子位置"""
     positions = [f"你的棋子当前位置（{side}）："]
@@ -21,10 +24,11 @@ def get_current_positions(side: str, board: list) -> str:
                 positions.append(f"- {PIECE_MAP.get(piece, piece)}: 行{i+1} 列{j+1}")
     return "\n".join(positions)
 
+
 def get_player_prompt(side: str, board: list) -> str:
     """生成玩家提示词，要求模型复述规则并思考"""
     role = "红方" if side == "R" else "黑方"
-    return f'''
+    return f"""
     你正在参与中国象棋对战，当前为{role}。以下是当前棋盘状态：
 
     {format_board(board)}
@@ -72,6 +76,9 @@ def get_player_prompt(side: str, board: list) -> str:
     - 优先级1：吃对方高价值棋子（如车=9分，炮=4.5分，马=4分，象/士=2分，兵/卒=1分，过河兵/卒=2分）。
     - 优先级2：吃对方低价值棋子。
     - 优先级3：推进到空位，靠近对方阵营（黑方行1-3，红方行8-10）。
+    
+    返回的移动指令：
+    - 注意最后返回的移动指令返回的是下标！！！
 
     请按照以下步骤回答：
     1. **复述规则**：用简洁语言重复上述移动规则和吃子规则，确保理解正确。
@@ -98,12 +105,13 @@ def get_player_prompt(side: str, board: list) -> str:
     移动指令
     [棋子代码, [目标行下标, 目标列下标]]
     只返回上述格式的内容，不要添加多余信息！
-    '''
+    """
+
 
 def get_referee_prompt(move: tuple, board: list) -> str:
     """生成裁判提示词"""
     piece, start_pos, end_pos = move
-    return f'''
+    return f"""
     请根据中国象棋规则判断以下移动是否合法：
 
     移动棋子：{PIECE_MAP.get(piece, piece)}
@@ -124,4 +132,36 @@ def get_referee_prompt(move: tuple, board: list) -> str:
     1 - 合法
     0 - 非法
     不要包含其他任何内容！
-    '''
+    """
+
+
+def get_rollback_prompt(side, move, board, reason):
+    game = GameEngine()
+    piece, (new_row, new_col) = move
+    old_row, old_col = game.history[piece][-1] if game.history[piece] else (None, None)
+    target = (
+        board[new_row][new_col]
+        if (0 <= new_row < 10 and 0 <= new_col < 9)
+        else "超出棋盘"
+    )
+
+    prompt = f"""
+    你是{side}方，上次的移动被判定为非法。以下是详细信息：
+    - 移动棋子：{piece}
+    - 起始位置：行{old_row + 1} 列{old_col + 1}（下标 [{old_row}, {old_col}]）
+    - 目标位置：行{new_row + 1} 列{new_col + 1}（下标 [{new_row}, {new_col}]）
+    - 目标位置状态：{target}
+    - 非法原因：{reason}
+
+    请分析错误并提出改进建议：
+    1. 为什么此移动非法？（结合象棋规则说明）
+    2. 如何调整策略以避免类似错误？（提供具体建议）
+
+    输出格式：
+    错误分析
+    [你的分析]
+
+    改进建议
+    [你的建议]
+    """
+    return prompt
